@@ -24,17 +24,25 @@ App = {
   },
 
   initWeb3: async function() {
-    /*
-     * Replace me...
-     */
+    // 初始化 web3
+    if (typeof web !== 'undefined') {
+      App.web3Provider = web3.currentProvider;
+    } else {
+      App.web3Provider = new web3.providers.HttpProvider("http://127.0.0.1:7545");
+    }
+    web3 = new Web3(App.web3Provider);
 
     return App.initContract();
   },
 
   initContract: function() {
-    /*
-     * Replace me...
-     */
+    // 初始化合约
+    $.getJSON('Adoption.json', function(data) {
+      var AdoptionArtifact = data;
+      App.contracts.Adoption = TruffleContract(AdoptionArtifact);
+      App.contracts.Adoption.setProvider(App.web3Provider);
+      return App.markAdopted();
+    });
 
     return App.bindEvents();
   },
