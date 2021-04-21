@@ -13,3 +13,11 @@ truffle migrate
 ### 执行测试用例
 
 truffle test
+
+### 初始化 web 应用
+
+npm init
+
+### 安装 web 服务器
+
+npm install lite-server
