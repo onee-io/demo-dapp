@@ -21,3 +21,7 @@ npm init
 ### 安装 web 服务器
 
 npm install lite-server
+
+### 启动服务
+
+npm run dev
