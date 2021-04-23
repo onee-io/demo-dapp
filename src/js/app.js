@@ -1,6 +1,7 @@
 App = {
   web3Provider: null,
   contracts: {},
+  account: null,
 
   init: async function() {
     // Load pets.
@@ -25,13 +26,7 @@ App = {
 
   initWeb3: async function() {
     // 初始化 web3
-    if (typeof web !== 'undefined') {
-      App.web3Provider = Web3.currentProvider;
-    } else {
-      App.web3Provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545");
-    }
-    web3 = new Web3(App.web3Provider);
-
+    App.linkWallet();
     return App.initContract();
   },
 
@@ -49,6 +44,7 @@ App = {
 
   bindEvents: function() {
     $(document).on('click', '.btn-adopt', App.handleAdopt);
+    $(document).on('click', '#linkWallet', App.linkWallet);
   },
 
   markAdopted: function() {
@@ -72,26 +68,60 @@ App = {
 
   handleAdopt: function(event) {
     event.preventDefault();
-    var adoptionInstance;
+
+    if (App.account == null) {
+      App.linkWallet();
+      return;
+    }
+
     var petId = parseInt($(event.target).data('id'));
+    // 获取已部署的合约实例
+    App.contracts.Adoption.deployed().then(function(instance) {
+      // 发起领养方法 adopt 调用
+      return instance.adopt(petId, { from: App.account });
+    }).then(function (result) {
+      // 领养后更新页面领养状态
+      return App.markAdopted();
+    }).catch(function(err) {
+      console.log(err.message);
+    });
 
-    web3.eth.getAccounts(function(error, accounts) {
-      // 获取合约账户
-      var account = accounts[0];
-      // 获取已部署的合约实例
-      App.contracts.Adoption.deployed().then(function(instance) {
-        adoptionInstance = instance;
-        // 发起领养方法 adopt 调用
-        return adoptionInstance.adopt(petId, { from: account });
-      }).then(function(result) {
-        // 领养后更新页面领养状态
-        return App.markAdopted();
-      }).catch(function(err) {
-        console.log(err.message);
-      });
-    })
+    // 以下方式也可以获取钱包地址
+    // web3.eth.getAccounts(function(error, accounts) {
+    //   // 获取合约账户
+    //   var account = accounts[0];
+    // });
+  },
+
+  linkWallet: function(event) {
+    if (window.ethereum) {
+      // 连接 metamask 钱包
+      App.web3Provider = window.ethereum;
+      try {
+        // 请求用户授权
+        window.ethereum.request({ 
+          method: 'eth_requestAccounts'
+        }).then(function(accounts) {
+          App.account = accounts[0];
+        });
+      } catch (error) {
+        if (error.code === 4001) {
+          // 用户不授权时
+          console.error("User denied account access")
+        }
+      }
+    } else {
+      alert('请安装MetaMask插件并解锁您的以太坊账户');
+    }
+
+    // 连接本地
+    // if (typeof web3 !== 'undefined') {
+    //   App.web3Provider = web3.currentProvider;
+    // } else {
+    //   App.web3Provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545");
+    // }
+    web3 = new Web3(App.web3Provider);
   }
-
 };
 
 $(function() {
